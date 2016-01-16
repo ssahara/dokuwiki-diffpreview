@@ -14,7 +14,7 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 	/**
 	 * Register its handlers with the DokuWiki's event controller
 	 */
-	function register(Doku_Handler $controller) {
+	function register(Doku_Event_Handler $controller) {
 		$controller->register_hook('HTML_EDITFORM_OUTPUT', 'BEFORE',  $this, '_edit_form');
 		$controller->register_hook('ACTION_ACT_PREPROCESS', 'BEFORE',  $this, '_action_act_preprocess');
 		$controller->register_hook('TPL_ACT_UNKNOWN', 'BEFORE',  $this, '_tpl_act_changes');
