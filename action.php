@@ -7,10 +7,6 @@ require_once(DOKU_INC.'inc/form.php');
 
 class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 
-	function action_plugin_diffpreview() {
-		$this->_change_headers = false;
-	}
-
 	/**
 	 * Register its handlers with the DokuWiki's event controller
 	 */
@@ -35,12 +31,23 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 		global $ACT;
 		global $INFO;
 
-		if(!is_array($event->data) || !array_key_exists('changes', $event->data)) return;
+		if ($event->data != 'changes') return;
 
-		if('preview' == act_permcheck('preview')
+		/* Check for DokuWiki release Greebo and above */
+		if (class_exists('\\dokuwiki\\ActionRouter', false)) {
+			/* See ActionRouter->setupAction() and Action\Preview */
+			$ae = new dokuwiki\Action\Edit();
+			$ae->checkPreconditions();
+			$this->savedraft();
+			$ae->preProcess();
+
+			$event->preventDefault();
+		}
+		else if('preview' == act_permcheck('preview')
 			&& 'preview' == act_draftsave('preview')
 			&& $INFO['editable']
 			&& 'preview' == act_edit('preview')) {
+			// DokuWiki releases before Greebo
 			$ACT = 'changes';
 			$event->stoppropagation();
 			$event->preventDefault();
@@ -61,7 +68,36 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 		html_edit($TEXT);
 		echo '<br id="scroll__here" />';
 		html_diff(con($PRE,$TEXT,$SUF));
+
 		$event->preventDefault();
 	}
 
+	/**
+	 * Saves a draft on show changes
+	 * Returns if the permissions don't allow it
+	 * Copied from dokuwiki\Action\Preview so that we use the same draft
+	 */
+	protected function savedraft() {
+		global $INFO, $ID, $INPUT, $conf;
+
+		if(!$conf['usedraft']) return;
+		if(!$INPUT->post->has('wikitext')) return;
+
+		// ensure environment (safeguard when used via AJAX)
+		assert(isset($INFO['client']), 'INFO.client should have been set');
+		assert(isset($ID), 'ID should have been set');
+
+		$draft = array(
+			'id' => $ID,
+			'prefix' => substr($INPUT->post->str('prefix'), 0, -1),
+			'text' => $INPUT->post->str('wikitext'),
+			'suffix' => $INPUT->post->str('suffix'),
+			'date' => $INPUT->post->int('date'),
+			'client' => $INFO['client'],
+		);
+		$cname = getCacheName($draft['client'] . $ID, '.draft');
+		if(io_saveFile($cname, serialize($draft))) {
+			$INFO['draft'] = $cname;
+		}
+	}
 }
