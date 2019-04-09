@@ -30,8 +30,14 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 	function _action_act_preprocess(Doku_Event $event, $param) {
 		global $ACT;
 		global $INFO;
+;
+		$action =& $event->data;
 
-		if ($event->data != 'changes') return;
+		if (!( /* Valid cases */
+			$action == 'changes' // Greebo
+			// Frusterick Manners and below... probably
+			|| is_array($action) && array_key_exists('changes', $action)
+		)) return;
 
 		/* Check for DokuWiki release Greebo and above */
 		if (class_exists('\\dokuwiki\\ActionRouter', false)) {
@@ -41,18 +47,19 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 			$this->savedraft();
 			$ae->preProcess();
 
+			$event->stopPropagation();
 			$event->preventDefault();
-		}
-		else if('preview' == act_permcheck('preview')
-			&& 'preview' == act_draftsave('preview')
-			&& $INFO['editable']
-			&& 'preview' == act_edit('preview')) {
-			// DokuWiki releases before Greebo
+		} else /* DokuWiki release Frusterick Manners or below */
+			// Same setup as preview: permissions and environment
+			if ('preview' == act_permcheck('preview')
+			&& 'preview' == act_edit('preview'))
+		{
+			act_draftsave('preview');
 			$ACT = 'changes';
-			$event->stoppropagation();
+
+			$event->stopPropagation();
 			$event->preventDefault();
-			$this->_change_headers = true;
-		}else{
+		} else {
 			$ACT = 'preview';
 		}
 	}
