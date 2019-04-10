@@ -39,8 +39,10 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 			|| is_array($action) && array_key_exists('changes', $action)
 		)) return;
 
-		/* Check for DokuWiki release Greebo and above */
+		/* We check the DokuWiki release */
 		if (class_exists('\\dokuwiki\\ActionRouter', false)) {
+			/* release Greebo (and above) */
+
 			/* See ActionRouter->setupAction() and Action\Preview */
 			$ae = new dokuwiki\Action\Edit();
 			$ae->checkPreconditions();
@@ -49,17 +51,25 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 
 			$event->stopPropagation();
 			$event->preventDefault();
-		} else /* DokuWiki release Frusterick Manners or below */
+
+		} elseif (function_exists('act_permcheck')) {
+			/* Release Frusterick Manners and below */
+
 			// Same setup as preview: permissions and environment
 			if ('preview' == act_permcheck('preview')
-			&& 'preview' == act_edit('preview'))
-		{
-			act_draftsave('preview');
-			$ACT = 'changes';
+				&& 'preview' == act_edit('preview'))
+			{
+				act_draftsave('preview');
+				$ACT = 'changes';
 
-			$event->stopPropagation();
-			$event->preventDefault();
+				$event->stopPropagation();
+				$event->preventDefault();
+			} else {
+				$ACT = 'preview';
+			}
+
 		} else {
+			// Fallback
 			$ACT = 'preview';
 		}
 	}
