@@ -28,9 +28,8 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 
 	/** Process the "changes" action */
 	function _action_act_preprocess(Doku_Event $event, $param) {
-		global $ACT;
-		global $INFO;
-;
+		global $ACT, $INFO;
+
 		$action =& $event->data;
 
 		if (!( /* Valid cases */
@@ -41,9 +40,10 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 
 		/* We check the DokuWiki release */
 		if (class_exists('\\dokuwiki\\ActionRouter', false)) {
-			/* release Greebo (and above) */
+			/* release Greebo and above */
 
 			/* See ActionRouter->setupAction() and Action\Preview */
+			// WARN: Only works because Action\Edit methods are public
 			$ae = new dokuwiki\Action\Edit();
 			$ae->checkPreconditions();
 			$this->savedraft();
@@ -92,29 +92,47 @@ class action_plugin_diffpreview extends DokuWiki_Action_Plugin {
 	/**
 	 * Saves a draft on show changes
 	 * Returns if the permissions don't allow it
-	 * Copied from dokuwiki\Action\Preview so that we use the same draft
+	 *
+	 * Copied from dokuwiki\Action\Preview (inc/Action/Preview.php)
+	 * so that we use the same draft. The two different versions come from
+	 * different releases.
 	 */
 	protected function savedraft() {
 		global $INFO, $ID, $INPUT, $conf;
 
-		if(!$conf['usedraft']) return;
-		if(!$INPUT->post->has('wikitext')) return;
+		if (class_exists('\\dokuwiki\\Draft', false)) {
+			/* Release Hogfather (and above) */
 
-		// ensure environment (safeguard when used via AJAX)
-		assert(isset($INFO['client']), 'INFO.client should have been set');
-		assert(isset($ID), 'ID should have been set');
+			$draft = new \dokuwiki\Draft($ID, $INFO['client']);
+			if (!$draft->saveDraft()) {
+				$errors = $draft->getErrors();
+				foreach ($errors as $error) {
+					msg(hsc($error), -1);
+				}
+			}
+			
+		} else {
+			/* Release Greebo and below */
+			
+			if(!$conf['usedraft']) return;
+			if(!$INPUT->post->has('wikitext')) return;
 
-		$draft = array(
-			'id' => $ID,
-			'prefix' => substr($INPUT->post->str('prefix'), 0, -1),
-			'text' => $INPUT->post->str('wikitext'),
-			'suffix' => $INPUT->post->str('suffix'),
-			'date' => $INPUT->post->int('date'),
-			'client' => $INFO['client'],
-		);
-		$cname = getCacheName($draft['client'] . $ID, '.draft');
-		if(io_saveFile($cname, serialize($draft))) {
-			$INFO['draft'] = $cname;
+			// ensure environment (safeguard when used via AJAX)
+			assert(isset($INFO['client']), 'INFO.client should have been set');
+			assert(isset($ID), 'ID should have been set');
+
+			$draft = array(
+				'id' => $ID,
+				'prefix' => substr($INPUT->post->str('prefix'), 0, -1),
+				'text' => $INPUT->post->str('wikitext'),
+				'suffix' => $INPUT->post->str('suffix'),
+				'date' => $INPUT->post->int('date'),
+				'client' => $INFO['client'],
+			);
+			$cname = getCacheName($draft['client'] . $ID, '.draft');
+			if(io_saveFile($cname, serialize($draft))) {
+				$INFO['draft'] = $cname;
+			}
 		}
 	}
 }
