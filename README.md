@@ -4,6 +4,7 @@ Author: Mikhail I. Izmestev (izmmishao5@gmail.com)
 Current maintainer: Tilwa Qendov (tilwa.qendov@gmail.com)
 
 Official docs: https://www.dokuwiki.org/plugin:diffpreview
+Changelog: See [CHANGELOG.md]
 
 ## Overview
 

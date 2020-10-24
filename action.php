@@ -3,9 +3,10 @@
 /**
  * DokuWiki Action component of DiffPreview Plugin
  *
- * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author  author Mikhail I. Izmestev <izmmishao5@gmail.com>
- * @author  Tilwa Qendov <izmmishao5@gmail.com>
+ * @license  GPL-2.0-or-later (http://www.gnu.org/licenses/gpl.html)
+ * @author   Mikhail I. Izmestev <izmmishao5@gmail.com>
+ * @author   Tilwa Qendov <tilwa.qendov@gmail.com>
+ * @version  1.1.2
  */
 class action_plugin_diffpreview extends DokuWiki_Action_Plugin
 {
